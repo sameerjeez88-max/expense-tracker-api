@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expense Tracker & Budgeting — Rana Yasir Mahy Ud Din</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between font-sans">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <div class="bg-indigo-600 text-white font-bold px-3 py-1.5 rounded-xl shadow-lg">ET</div>
+        <span class="text-lg font-bold tracking-wider">FinPulse Budgeting</span>
+      </div>
+      <div class="text-xs text-slate-400">
+        Developer: <span class="text-indigo-400 font-medium">Rana Yasir Mahy Ud Din</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-5xl mx-auto px-6 py-10 flex-grow w-full">
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-extrabold tracking-tight mb-2">Personal Expense Tracker</h1>
+      <p class="text-slate-400 text-sm max-w-md mx-auto">Monitor income, track expenditures, and manage your budget effortlessly.</p>
+    </div>
+
+    <!-- KPI Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Balance</h4>
+        <div id="summary-balance" class="text-2xl font-extrabold text-indigo-400">$0.00</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Income</h4>
+        <div id="summary-income" class="text-2xl font-extrabold text-emerald-400">$0.00</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Expense</h4>
+        <div id="summary-expense" class="text-2xl font-extrabold text-red-400">$0.00</div>
+      </div>
+    </div>
+
+    <!-- Add Transaction Card -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl mb-10">
+      <h2 class="text-lg font-bold mb-4 text-indigo-400">➕ Add New Transaction</h2>
+      <form id="tx-form" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Title</label>
+            <input type="text" id="title" required placeholder="e.g. Client Payment" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Amount ($)</label>
+            <input type="number" step="0.01" id="amount" required placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Type</label>
+            <select id="type" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-slate-200">
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Category</label>
+            <input type="text" id="category" placeholder="e.g. Freelance, Food" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/20 text-sm">
+          Add Transaction
+        </button>
+      </form>
+    </div>
+
+    <!-- Transactions List -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <h2 class="text-lg font-bold mb-4 border-b border-slate-800 pb-3">Transaction History</h2>
+      <div id="tx-list" class="space-y-3">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 bg-slate-900/40 py-6 text-center text-xs text-slate-500">
+    © 2026 Rana Yasir Mahy Ud Din • Personal Expense Tracker & Budgeting API
+  </footer>
+
+  <script>
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/transactions');
+        const json = await res.json();
+        if (json.success) {
+          renderSummary(json.summary);
+          renderTransactions(json.data);
+        }
+      } catch (err) {
+        console.error('Error fetching transactions:', err);
+      }
+    }
+
+    function renderSummary(summary) {
+      document.getElementById('summary-balance').innerText = `$${summary.balance.toFixed(2)}`;
+      document.getElementById('summary-income').innerText = `$${summary.totalIncome.toFixed(2)}`;
+      document.getElementById('summary-expense').innerText = `$${summary.totalExpense.toFixed(2)}`;
+    }
+
+    function renderTransactions(transactions) {
+      const list = document.getElementById('tx-list');
+      if (transactions.length === 0) {
+        list.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">No transactions recorded yet.</p>`;
+        return;
+      }
+
+      list.innerHTML = transactions.map(t => {
+        const isIncome = t.type === 'income';
+        const amountColor = isIncome ? 'text-emerald-400' : 'text-red-400';
+        const sign = isIncome ? '+' : '-';
+        return `
+          <div class="p-4 bg-slate-950/60 rounded-xl border border-slate-800 flex justify-between items-center text-sm">
+            <div class="flex items-center space-x-3 overflow-hidden pr-4">
+              <div class="w-2.5 h-2.5 rounded-full ${isIncome ? 'bg-emerald-400' : 'bg-red-400'} flex-shrink-0"></div>
+              <div class="overflow-hidden">
+                <h4 class="font-bold text-sm truncate">${t.title}</h4>
+                <div class="flex items-center space-x-2 text-xs text-slate-400 mt-0.5">
+                  <span class="bg-slate-900 px-2 py-0.5 rounded text-slate-300">${t.category}</span>
+                  <span>•</span>
+                  <span>${t.date}</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center space-x-4 flex-shrink-0">
+              <span class="font-extrabold text-sm ${amountColor}">${sign}$${t.amount.toFixed(2)}</span>
+              <button onclick="deleteTx(${t.id})" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs px-3 py-1.5 rounded-lg font-medium transition-all">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('tx-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('title').value;
+      const amount = document.getElementById('amount').value;
+      const type = document.getElementById('type').value;
+      const category = document.getElementById('category').value;
+
+      try {
+        const res = await fetch('/api/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, amount, type, category })
+        });
+        const json = await res.json();
+        if (json.success) {
+          document.getElementById('tx-form').reset();
+          fetchData();
+        } else {
+          alert(json.message);
+        }
+      } catch (err) {
+        alert('Failed to add transaction.');
+      }
+    });
+
+    async function deleteTx(id) {
+      if (!confirm('Are you sure you want to delete this transaction?')) return;
+      try {
+        const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+        const json = await res.json();
+        if (json.success) {
+          fetchData();
+        } else {
+          alert(json.message);
+        }
+      } catch (err) {
+        alert('Failed to delete transaction.');
+      }
+    }
+
+    fetchData();
+  </script>
+</body>
+</html>
